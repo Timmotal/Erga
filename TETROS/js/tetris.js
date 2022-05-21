@@ -10,7 +10,9 @@ const COLmini = COLUMNmini = 4;
 
 const scoreElement = document.getElementById('score');
 
-const ROW = 20;
+const ROW = 24;
+const VISIBLE_ROWS = 20;
+const SKIP_ROWS = ROW - VISIBLE_ROWS;
 const COL = COLUMN = 10;
 const SQ = squareSize = 20;
 const VACANT = "WHITE"; //color of an empty space
@@ -25,10 +27,10 @@ const btn = document.getElementById('btn')
 // draw a  square to main board
     function drawSquare(x, y, color) {
         ctx.fillStyle = color;
-        ctx.fillRect(x*SQ, y*SQ, SQ, SQ);
+        ctx.fillRect(x*SQ, (y - SKIP_ROWS)*SQ, SQ, SQ);
 
         ctx.strokeStyle = "BLACK";
-        ctx.strokeRect(x*SQ, y*SQ, SQ, SQ); 
+        ctx.strokeRect(x*SQ, (y - SKIP_ROWS)*SQ, SQ, SQ); 
     }
 
     // draw a  square to mini board
@@ -57,7 +59,7 @@ const btn = document.getElementById('btn')
 
 // draw the board
 function drawBoard() {
-    for(let r = 0; r < ROW; r++) {
+    for(let r = SKIP_ROWS; r < ROW; r++) {
         for(let c = 0; c < COL; c++) {
             drawSquare(c, r, board[r] [c]);
         }
@@ -105,59 +107,50 @@ function randomPiece() {
 
 // The Object Piece
 
-function Piece(tetromino, colour) {
-    this.tetromino = tetromino;
-    this.colour = colour;
+class Piece {
+    constructor(tetromino, colour) {
+        this.tetromino = tetromino;
+        this.colour = colour;
 
-    this.tetrominoN = 0; // we start from the first pattern
-    this.activeTetromino = this.tetromino[this.tetrominoN]; //this is like saying: Z[0], 
-    //                     (this.tetromino) 
+        this.tetrominoN = 0; // we start from the first pattern
+        this.activeTetromino = this.tetromino[this.tetrominoN]; //this is like saying: Z[0], 
+        //                     (this.tetromino) 
 
-    // we need to control the pieces
-    this.x = 0;
-    this.y = 0; 
-}
+        // we need to control the pieces
+        this.x = Math.floor((COL - this.tetromino[0].length) / 2);
+        this.y = 0; 
+    }
 
 
-// fill function
-Piece.prototype.fill= function(colour) {
-    for( r = 0; r < this.activeTetromino.length; r++) {
-        for( c = 0; c < this.activeTetromino.length; c++) {
-            // we draw only occupied squares
-            if( this.activeTetromino[r] [c]) { //
-                drawSquare(this.x + c, this.y + r, colour)
+    // fill function
+    fill(colour) {
+        for(let r = 0; r < this.activeTetromino.length; r++) {
+            for(let c = 0; c < this.activeTetromino.length; c++) {
+                // we draw only occupied squares
+                if( this.activeTetromino[r][c] && (this.y + r) >= SKIP_ROWS) { //
+                    drawSquare(this.x + c, this.y + r, colour)
+                }
             }
         }
     }
-}
 
 // draw mini square grid
-Piece.prototype.fillMini= function() {
-    clearMiniBoard();
-    const tetromino = this.tetromino[0];
-    for(let rm = 0; rm < tetromino.length; rm++) {
-        for(let cm = 0; cm < tetromino[rm].length; cm++) {
-            if (tetromino[rm][cm]) {
-                drawMiniSquare(cm, rm, this.colour);
+    fillMini() {
+        clearMiniBoard();
+        const tetromino = this.tetromino[0]; // [[0, 1, 0], [1, 1, 1], [0, 0, 0]]
+        for(let rm = 0; rm < tetromino.length; rm++) {
+            for(let cm = 0; cm < tetromino[rm].length; cm++) {
+                if (tetromino[rm][cm]) {
+                    drawMiniSquare(cm, rm, this.colour);
+                }
             }
         }
-    }
-
-
-    // for( rm = 0; rm < this.activeTetromino.length; rm++) {
-    //     for( cm = 0; cm < this.activeTetromino.length; cm++) {
-    //         // we draw only occupied squares
-    //         if( this.activeTetromino[rm] [cm]) { // i think this is where the solution lies
-    //             drawMiniSquare(this.x + cm, this.y + rm, colour)
-    //         }
-    //     }
-    // }
-} 
+    } 
 // 
 
 
 // DRAW A PIECE TO THE BOARD
-// Piece.prototype.draw = function() {
+//  draw() {
 //     for( r = 0; r < this.activeTetromino.length; r++) {
 //         for( c = 0; c < this.activeTetromino.length; c++) {
 //             // we draw only occupied squares
@@ -170,17 +163,17 @@ Piece.prototype.fillMini= function() {
 
 // we refactored all of the above from line 100 to this
 // DRAW A PIECE TO THE BOARD
-Piece.prototype.draw = function() {
-    this.fill(this.colour); 
-    // this.fillMini(this.colour); // took you long enough
-}
+    draw() {
+        this.fill(this.colour); 
+        // this.fillMini(this.colour); // took you long enough
+    }
 // end 
 
 // p.draw();
 
 
 // undraw a piece
-// Piece.prototype.unDraw = function() {
+//  unDraw() {
 //     for( r = 0; r < this.activeTetromino.length; r++) {
 //         for( c = 0; c < this.activeTetromino.length; c++) {
 //             // we draw only occupied squares
@@ -192,151 +185,152 @@ Piece.prototype.draw = function() {
 // }
 // we refactored all of the above from line 122 to this
 // undraw a piece
-Piece.prototype.unDraw = function() {
-    this.fill(VACANT);
-//    this.fillMini(VACANT);
-}
+    unDraw() {
+        this.fill(VACANT);
+    //    this.fillMini(VACANT);
+    }
 
 
 // MOVE DOWN THE PIECE
-Piece.prototype.moveDown = function() {
-    if(!this.collision(0, 1, this.activeTetromino)) { 
-    this.unDraw();
-    this.y++;
-    this.draw();
-    }else {
-        // we lock the piece and generate a new piece 
-        this.lock(); // this is where the magic happens when there is a collison, lock the colours to the squares, no more undrawing
-        p = nextPiece;
-        nextPiece = randomPiece();
-        nextPiece.fillMini();
+    moveDown() {
+        if(!this.collision(0, 1, this.activeTetromino)) { 
+        this.unDraw();
+        this.y++;
+        this.draw();
+        }else {
+            // we lock the piece and generate a new piece 
+            this.lock(); // this is where the magic happens when there is a collison, lock the colours to the squares, no more undrawing
+            p = nextPiece;
+            nextPiece = randomPiece();
+            nextPiece.fillMini();
+        }
+        
     }
-    
-}
 
 // MOVE TO THE RIGHT THE PIECE
-Piece.prototype.moveRight = function() {
-    if(!this.collision(1, 0, this.activeTetromino)) {
-    this.unDraw();
-    this.x++;
-    this.draw();
+    moveRight() {
+        if(!this.collision(1, 0, this.activeTetromino)) {
+            this.unDraw();
+            this.x++;
+            this.draw();
+        }
     }
-}
 
 // MOVE TO THE LEFT THE PIECE
-Piece.prototype.moveLeft = function() {
-    if(!this.collision(-1, 0, this.activeTetromino)) {
-    this.unDraw();
-    this.x--;
-    this.draw();
+    moveLeft() {
+        if(!this.collision(-1, 0, this.activeTetromino)) {
+            this.unDraw();
+            this.x--;
+            this.draw();
+        }
     }
-}
 
 
 // MOVE THE PIECE TO ROTATE
-Piece.prototype.rotate = function() {
-    let nextPattern = this.tetromino[(this.tetrominoN + 1) % this.tetromino.length]; // this makes it rotate from 0 - 3
-    let kick = 0; 
+    rotate() {
+        let nextPattern = this.tetromino[(this.tetrominoN + 1) % this.tetromino.length]; // this makes it rotate from 0 - 3
+        let kick = 0; 
 
-    if(this.collision(0, 0, nextPattern)) {
-        if(this.x > COL/2) { 
-            // it's the right wall
-            kick = -1; // we need to move the piece to the left
-        }else{
-            //it's the left wall
-            kick = 2; // we need to move the piece to the right
-        } // i added 2 , its not even doing  that bad
+        if(this.collision(0, 0, nextPattern)) {
+            if(this.x > COL/2) { 
+                // it's the right wall
+                kick = -1; // we need to move the piece to the left
+            }else{
+                //it's the left wall
+                kick = 2; // we need to move the piece to the right
+            } // i added 2 , its not even doing  that bad
+        }
+            
+        if(!this.collision(kick, 0, nextPattern)) {
+            this.unDraw();
+            this.x += kick;
+            this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length; // (0 + 1) % 4 => 1
+            this.activeTetromino = this.tetromino[this.tetrominoN];
+            this.draw();
+        }
     }
+
+    lock() {
+        for(let r = 0; r < this.activeTetromino.length; r++) {
+            for(let c = 0; c < this.activeTetromino.length; c++) {
+                // we skip the vacant squares
+                if( !this.activeTetromino[r] [c]) {
+                    continue;
+                }
+                // pieces to lock on top = game over
+                if(this.y + r < 0) { // 
+                    alert("Game Over");
+                    // stop request animation frame
+                    gameOver = true;
+                    document.removeEventListener("keydown", CONTROL);
+                    break; // break from the loop
+                }
+                // we lock the piece
+                // once there is a collision it looks this colour to the current item in the array
+                board[this.y+r][this.x+c] = this.colour;
+            }
+        }
+        //  remove full rows
+        for(let r = 0; r < ROW; r++) {
+            let isRowFull = true; // is the ROW in existence
+            for(let c = 0; c < COL; c++) {
+                isRowFull = isRowFull && (board[r][c] != VACANT); // here we are checking each column of a row, one by one
+            }
+            // this is the one checking if the ROW is FUll and then we eliminate if the ROW is full
+            if( isRowFull) { 
+                for(let y = r; y > 0; y--) {//MY QUESTION, why does "y" be grater than 1 when a full row is simply equal to index 0
+                    for(let c = 0; c < COL; c++){
+                    board[y][c] = board[y-1][c]; // this assigns the row below to a ROW above, actually we are assigning a full column, this makes it aapear as though we are moving it downwards and when this get to the first collumns of the first ROW, what will happen? check line 173 for your answer 
+                    }
+                }
+                // the top row board[0][...] has no row above it
+            for(let c = 0; c < COL; c++) {
+                board[0][c] = VACANT; // so we create it again
+            }
+            // increment the score
+            score += 10;
+            }
+        }
+        // update the board
+        drawBoard();
         
-    if(!this.collision(kick, 0, nextPattern)) {
-    this.unDraw();
-    this.x += kick;
-    this.tetrominoN = (this.tetrominoN + 1) % this.tetromino.length; // (0 + 1) % 4 => 1
-    this.activeTetromino = this.tetromino[this.tetrominoN];
-    this.draw();
+        // update the score
+        scoreElement.innerHTML = score
+    }
+
+// collision function
+    collision(x, y, piece) {
+        for(let r = 0; r < piece.length; r++) {
+            for(let c = 0; c < piece.length; c++) {
+                // if the square is empty, we skip it i.e if square is not occupied
+                if(!piece[r][c]) {
+                    continue;
+                }
+                //  coordinates of the piece after movement
+                let newX = this.x +  c + x;
+                let newY = this.y +  r + y;
+
+                // conditions
+                // if all these coditions are true return true
+                // true will impy that a boundary has been breached
+                if(newX < 0 || newX >= COL || newY >= ROW) {
+                    return true;
+                }
+                if(newY < 0){ // the game would crash, because of the initial position we set to "-2 " we have to bypass it
+                    continue;
+                }
+                // check if there is a locked piece already in place
+                if ( board[newY][newX] != VACANT ) {
+                    return true;
+                }
+                
+            }
+        }
     }
 }
 
 let score = 0
 // lock function
-Piece.prototype.lock = function() {
-    for( r = 0; r < this.activeTetromino.length; r++) {
-                for( c = 0; c < this.activeTetromino.length; c++) {
-                    // we skip the vacant squares
-                    if( !this.activeTetromino[r] [c]) {
-                        continue;
-                    }
-                    // pieces to lock on top = game over
-                    if(this.y + r < 0) { // 
-                        alert("Game Over");
-                        // stop request animation frame
-                        gameOver = true;
-                        document.removeEventListener("keydown", CONTROL);
-                        break; // break from the loop
-                    }
-                    // we lock the piece
-                    // once there is a collision it looks this colour to the current item in the array
-                    board[this.y+r][this.x+c] = this.colour;
-                }
-            }
-            //  remove full rows
-            for( r = 0; r < ROW; r++) {
-                let isRowFull = true; // is the ROW in existence
-                for( c = 0; c < COL; c++) {
-                    isRowFull = isRowFull && (board[r][c] != VACANT); // here we are checking each column of a row, one by one
-                }
-                // this is the one checking if the ROW is FUll and then we eliminate if the ROW is full
-                if( isRowFull) { 
-                    for( y = r; y > 0; y--) {//MY QUESTION, why does "y" be grater than 1 when a full row is simply equal to index 0
-                        for( c = 0; c < COL; c++){
-                        board[y][c] = board[y-1][c]; // this assigns the row below to a ROW above, actually we are assigning a full column, this makes it aapear as though we are moving it downwards and when this get to the first collumns of the first ROW, what will happen? check line 173 for your answer 
-                        }
-                    }
-                    // the top row board[0][...] has no row above it
-                for( c = 0; c < COL; c++) {
-                    board[0][c] = VACANT; // so we create it again
-                }
-                // increment the score
-                score += 10;
-                }
-            }
-            // update the board
-            drawBoard();
-            
-            // update the score
-            scoreElement.innerHTML = score
-}
-
-// collision function
-Piece.prototype.collision = function(x, y, piece) {
-    for( r = 0; r < piece.length; r++) {
-        for( c = 0; c < piece.length; c++) {
-            // if the square is empty, we skip it i.e if square is not occupied
-            if(!piece[r][c]) {
-                continue;
-            }
-            //  coordinates of the piece after movement
-            let newX = this.x +  c + x;
-            let newY = this.y +  r + y;
-
-            // conditions
-            // if all these coditions are true return true
-            // true will impy that a boundary has been breached
-            if(newX < 0 || newX >= COL || newY >= ROW) {
-                return true;
-            }
-            if(newY < 0){ // the game would crash, because of the initial position we set to "-2 " we have to bypass it
-                continue;
-            }
-            // check if there is a locked piece already in place
-            if ( board[newY][newX] != VACANT ) {
-                return true;
-            }
-            
-        }
-    }
-}
-
 let nextPiece = randomPiece();
 let p = randomPiece();
 
