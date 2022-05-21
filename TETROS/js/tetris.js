@@ -10,7 +10,9 @@ const COLmini = COLUMNmini = 4;
 
 const scoreElement = document.getElementById('score');
 
-const ROW = 20;
+const ROW = 24;
+const VISIBLE_ROWS = 20;
+const SKIP_ROWS = ROW - VISIBLE_ROWS;
 const COL = COLUMN = 10;
 const SQ = squareSize = 20;
 const VACANT = "WHITE"; //color of an empty space
@@ -25,10 +27,10 @@ const btn = document.getElementById('btn')
 // draw a  square to main board
     function drawSquare(x, y, color) {
         ctx.fillStyle = color;
-        ctx.fillRect(x*SQ, y*SQ, SQ, SQ);
+        ctx.fillRect(x*SQ, (y - SKIP_ROWS)*SQ, SQ, SQ);
 
         ctx.strokeStyle = "BLACK";
-        ctx.strokeRect(x*SQ, y*SQ, SQ, SQ); 
+        ctx.strokeRect(x*SQ, (y - SKIP_ROWS)*SQ, SQ, SQ); 
     }
 
     // draw a  square to mini board
@@ -57,7 +59,7 @@ const btn = document.getElementById('btn')
 
 // draw the board
 function drawBoard() {
-    for(let r = 0; r < ROW; r++) {
+    for(let r = SKIP_ROWS; r < ROW; r++) {
         for(let c = 0; c < COL; c++) {
             drawSquare(c, r, board[r] [c]);
         }
@@ -115,7 +117,7 @@ class Piece {
         //                     (this.tetromino) 
 
         // we need to control the pieces
-        this.x = 0;
+        this.x = Math.floor((COL - this.tetromino[0].length) / 2);
         this.y = 0; 
     }
 
@@ -125,7 +127,7 @@ class Piece {
         for(let r = 0; r < this.activeTetromino.length; r++) {
             for(let c = 0; c < this.activeTetromino.length; c++) {
                 // we draw only occupied squares
-                if( this.activeTetromino[r] [c]) { //
+                if( this.activeTetromino[r][c] && (this.y + r) >= SKIP_ROWS) { //
                     drawSquare(this.x + c, this.y + r, colour)
                 }
             }
