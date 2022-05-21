@@ -40,39 +40,44 @@ const btn = document.getElementById('btn')
         ctxMini.strokeRect(x*SQ, y*SQ, SQ, SQ); 
     }
 
+    function clearMiniBoard() {
+        ctxMini.clearRect(0, 0, SQ*COLmini, SQ*ROWmini);
+    }
+
     //  drawMiniSquare(4, 4, VACANT) // x is the margin-left and y is the margin-top
 
     // create the Main Board 
     let board = []
-    for( r = 0; r < ROW; r++) {
+    for(let r = 0; r < ROW; r++) {
         board[r] = [];
-        for( c = 0; c < COL; c++) {
+        for(let c = 0; c < COL; c++) {
             board[r] [c] =  VACANT;
         }
     }
 
 // draw the board
 function drawBoard() {
-    for( r = 0; r < ROW; r++) {
-        for( c = 0; c < COL; c++) {
+    for(let r = 0; r < ROW; r++) {
+        for(let c = 0; c < COL; c++) {
             drawSquare(c, r, board[r] [c]);
         }
     }
 }
 
-drawBoard();
 
 // mini grid canvas
 // draw the mini board
-function drawMiniBoard() {
-    for( rm = 0; rm < ROWmini; rm++) {
-        for( cm = 0; cm < COLmini; cm++) {
-            drawMiniSquare(cm, rm, board[rm] [cm]);
-        }
-    }
-}
+// function drawMiniBoard() {
+//     const nextTetromino = nextPiece.tetromino[0];
+//     for(let rm = 0; rm < nextTetromino.length; rm++) {
+//         for(let cm = 0; cm < nextTetromino[rm].length; cm++) {
+//             if (nextTetromino[rm][cm]) {
+//                 drawMiniSquare(cm, rm, nextPiece.colour);
+//             }
+//         }
+//     }
+// }
 
-drawMiniBoard();
 
 //the pieces and their colours
 
@@ -97,9 +102,6 @@ function randomPiece() {
     let r = randomN = Math.floor(Math.random() * PIECES.length) // from array 0 to  array 6
     return new Piece( PIECES[r][0], PIECES[r][1]); // question is how are we giving colours to the terotrominoes?
 }
-
-let p = randomPiece();
-
 
 // The Object Piece
 
@@ -130,15 +132,26 @@ Piece.prototype.fill= function(colour) {
 }
 
 // draw mini square grid
-Piece.prototype.fillMini= function(colour) {
-    for( rm = 0; rm < this.activeTetromino.length; rm++) {
-        for( cm = 0; cm < this.activeTetromino.length; cm++) {
-            // we draw only occupied squares
-            if( this.activeTetromino[rm] [cm]) { // i think this is where the solution lies
-                drawMiniSquare(this.x + cm, this.y + rm, colour)
+Piece.prototype.fillMini= function() {
+    clearMiniBoard();
+    const tetromino = this.tetromino[0];
+    for(let rm = 0; rm < tetromino.length; rm++) {
+        for(let cm = 0; cm < tetromino[rm].length; cm++) {
+            if (tetromino[rm][cm]) {
+                drawMiniSquare(cm, rm, this.colour);
             }
         }
     }
+
+
+    // for( rm = 0; rm < this.activeTetromino.length; rm++) {
+    //     for( cm = 0; cm < this.activeTetromino.length; cm++) {
+    //         // we draw only occupied squares
+    //         if( this.activeTetromino[rm] [cm]) { // i think this is where the solution lies
+    //             drawMiniSquare(this.x + cm, this.y + rm, colour)
+    //         }
+    //     }
+    // }
 } 
 // 
 
@@ -159,7 +172,7 @@ Piece.prototype.fillMini= function(colour) {
 // DRAW A PIECE TO THE BOARD
 Piece.prototype.draw = function() {
     this.fill(this.colour); 
-    this.fillMini(this.colour); // took you long enough
+    // this.fillMini(this.colour); // took you long enough
 }
 // end 
 
@@ -181,7 +194,7 @@ Piece.prototype.draw = function() {
 // undraw a piece
 Piece.prototype.unDraw = function() {
     this.fill(VACANT);
-    this.fillMini(VACANT);
+//    this.fillMini(VACANT);
 }
 
 
@@ -194,7 +207,9 @@ Piece.prototype.moveDown = function() {
     }else {
         // we lock the piece and generate a new piece 
         this.lock(); // this is where the magic happens when there is a collison, lock the colours to the squares, no more undrawing
-        p = randomPiece();
+        p = nextPiece;
+        nextPiece = randomPiece();
+        nextPiece.fillMini();
     }
     
 }
@@ -322,6 +337,12 @@ Piece.prototype.collision = function(x, y, piece) {
     }
 }
 
+let nextPiece = randomPiece();
+let p = randomPiece();
+
+drawBoard();
+nextPiece.fillMini();
+// drawMiniBoard();
 
 // CONTROL THE PIECE
 document.addEventListener("keydown", CONTROL);
