@@ -276,8 +276,8 @@ class Piece {
             }
             // this is the one checking if the ROW is FUll and then we eliminate if the ROW is full
             if( isRowFull) { 
-                for( y = r; y > 0; y--) {//MY QUESTION, why does "y" be grater than 1 when a full row is simply equal to index 0
-                    for( c = 0; c < COL; c++){
+                for(let y = r; y > 0; y--) {//MY QUESTION, why does "y" be grater than 1 when a full row is simply equal to index 0
+                    for(let c = 0; c < COL; c++){
                     board[y][c] = board[y-1][c]; // this assigns the row below to a ROW above, actually we are assigning a full column, this makes it aapear as though we are moving it downwards and when this get to the first collumns of the first ROW, what will happen? check line 173 for your answer 
                     }
                 }
